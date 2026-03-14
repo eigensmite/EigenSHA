@@ -24,10 +24,15 @@ The implementation is designed to be **clear, modular, and easy to integrate**, 
 
 ## File Structure
 ├── main.c # CLI interface for hashing files or stdin
+
 ├── sha3.h # SHA-3 sponge interface
+
 ├── sha3.c # SHA-3 sponge implementation
+
 ├── keccak_f.h # Keccak-f permutation interface
+
 ├── keccak_f.c # Keccak-f permutation implementation
+
 └── README.md # This file
 
 ---
@@ -46,8 +51,6 @@ gcc main.c sha3.c keccak_f.c -o sha3 -lm -std=c11 -Wall -O2 -floop-nest-optimize
 
 ```bash
 ./sha3 <path/to/file> [-224|-256|-384|-512]
-```
-```bash
 cat <path/to/file> | ./sha3 [-224|-256|-384|-512]
 ```
 
@@ -112,13 +115,13 @@ void keccak_f(uint64_t state[25]);
 
 ## Implementation Notes
 
-The sponge construction absorbs input in blocks (rate bytes) and permutes the state using the Keccak-f function.
+- The sponge construction absorbs input in blocks (rate bytes) and permutes the state using the Keccak-f function.
 
-Keccak-f[1600] operates on a 5x5x64-bit state array, applying the standard rounds: θ (theta), ρ (rho), π (pi), χ (chi), ι (iota).
+- Keccak-f[1600] operates on a 5x5x64-bit state array, applying the standard rounds: θ (theta), ρ (rho), π (pi), χ (chi), ι (iota).
 
-Padding uses the standard SHA-3 10*1 pattern (0x06 … 0x80).
+- Padding uses the standard SHA-3 10*1 pattern (0x06 … 0x80).
 
-The code is designed for clarity and modularity; memcpy and memset are used for efficient buffer handling.
+- The code is designed for clarity and modularity; memcpy and memset are used for efficient buffer handling.
 
 ---
 
