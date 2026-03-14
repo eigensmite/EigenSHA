@@ -6,4 +6,8 @@ or `cat <../path/to/file.txt> | ./sha3.o`
 
 or `echo -n "text string abc" | ./sha3.o`
 
+use `-224`, `-256`, `-384`, `-512` tags to specify hash length
+
+default hash length is 256
+
 You will have to have the math library and gnu multi precision library installed
