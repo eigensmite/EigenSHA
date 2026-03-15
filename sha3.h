@@ -75,10 +75,7 @@ typedef struct {
  * SHA3_384 - parameters for SHA3-384 (48-byte output)
  * SHA3_512 - parameters for SHA3-512 (64-byte output)
  */
-extern const SHA_3 SHA3_224;
-extern const SHA_3 SHA3_256;
-extern const SHA_3 SHA3_384;
-extern const SHA_3 SHA3_512;
+extern const SHA_3 SHA3_224, SHA3_256, SHA3_384, SHA3_512;
 
 /*
  * Initialize the sponge context with SHA-3 parameters.
@@ -111,6 +108,6 @@ void sponge_pad(sponge_ctx *ctx);
  * hash - output hash buffer (of length ctx->out)
  * ctx  - sponge context
  */
-void sponge_squeeze(uint8_t *hash, sponge_ctx *ctx);
+void sponge_squeeze(uint8_t *hash, const sponge_ctx *ctx);
 
 #endif

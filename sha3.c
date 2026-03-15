@@ -20,10 +20,10 @@
 #include "sha3.h"
 
 /* Predefined SHA-3 parameter sets */
-const SHA_3 SHA3_224 = {.rate=144, .out=28};
-const SHA_3 SHA3_256 = {.rate=136, .out=32};
-const SHA_3 SHA3_384 = {.rate=104, .out=48};
-const SHA_3 SHA3_512 = {.rate=72,  .out=64};
+const SHA_3 SHA3_224 = {.rate=144, .out=28},
+            SHA3_256 = {.rate=136, .out=32},
+            SHA3_384 = {.rate=104, .out=48},
+            SHA3_512 = {.rate=72,  .out=64};
 
 
 /*
@@ -100,6 +100,6 @@ void sponge_pad(sponge_ctx *ctx) {
  * hash - output buffer (length ctx->out)
  * ctx  - sponge context
  */
-void sponge_squeeze(uint8_t *hash, sponge_ctx *ctx) {
+void sponge_squeeze(uint8_t *hash, const sponge_ctx *ctx) {
     memcpy(hash, ctx->state, ctx->out);
 }
