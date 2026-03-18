@@ -1,71 +1,12 @@
 
+#ifndef SHA_OPS_H
+#define SHA_OPS_H
 
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-
+#include "sha1.h"
+#include "sha256.h"
+#include "sha512.h"
 #include "sha3.h"
 
-enum Sha {
-    SHA_1, SHA_224, SHA_256, SHA_384, SHA_512, SHA_512_224, SHA_512_256, SHA_3_224, SHA_3_256, SHA_3_384, SHA_3_512, SHA_COUNT
-};
-
-typedef struct {
-    uint32_t hash[5];
-    uint8_t buf[64];
-    size_t pos;
-    uint64_t len;
-    size_t out;
-} sha1_ctx;
-
-typedef struct {
-    uint32_t hash[8];
-    uint8_t buf[64];
-    size_t pos;
-    uint64_t len;
-    size_t out;
-} sha256_ctx;
-
-typedef struct {
-    uint32_t hash[8];
-    uint8_t buf[64];
-    size_t pos;
-    uint64_t len;
-    size_t out;
-} sha224_ctx;
-
-typedef struct {
-    uint64_t hash[8];
-    uint8_t buf[128];
-    size_t pos;
-    __uint128_t len;
-    size_t out;
-} sha512_ctx;
-
-typedef struct {
-    uint64_t hash[8];
-    uint8_t buf[128];
-    size_t pos;
-    __uint128_t len;
-    size_t out;
-} sha384_ctx;
-
-typedef struct {
-    uint64_t hash[8];
-    uint8_t buf[128];
-    size_t pos;
-    __uint128_t len;
-    size_t out;
-} sha512_256_ctx;
-
-typedef struct {
-    uint64_t hash[8];
-    uint8_t buf[128];
-    size_t pos;
-    __uint128_t len;
-    size_t out;
-} sha512_224_ctx;
 
 #define DEFINE_SHA_WRAPPERS(name, ctx_type)                             \
     void name##_init_wrap(void *ctx) {                                  \
@@ -143,52 +84,5 @@ extern const sha_ops sha3_256_ops;
 extern const sha_ops sha3_384_ops;
 extern const sha_ops sha3_512_ops;
 
-// void sha2_state_build(sha2_ctx *ctx, uint8_t *data, size_t len);
 
-// void sha2_state_finish(sha2_ctx *ctx);
-
-// void sha2_hash_extract(uint8_t *hash, sha2_ctx *ctx);
-
-
-#define sha_init(ctx) _Generic((ctx), \
-    sha1_ctx*: sha1_init, \
-    sha224_ctx*: sha224_init, \
-    sha256_ctx*: sha256_init, \
-    sha384_ctx*: sha384_init, \
-    sha512_ctx*: sha512_init, \
-    sha512_224_ctx*: sha512_224_init, \
-    sha512_256_ctx*: sha512_256_init \
-)(ctx)
-
-#define sha_update(ctx, data, len) _Generic((ctx), \
-    sha_ctx*: sha_ctx_update, \
-    sha1_ctx*: sha1_update, \
-    sha224_ctx*: sha224_update, \
-    sha256_ctx*: sha256_update, \
-    sha384_ctx*: sha384_update, \
-    sha512_ctx*: sha512_update, \
-    sha512_224_ctx*: sha512_224_update, \
-    sha512_256_ctx*: sha512_256_update \
-)(ctx, data, len)
-
-#define sha_finalize(ctx) _Generic((ctx), \
-    sha_ctx*: sha_ctx_finalize, \
-    sha1_ctx*: sha1_finalize, \
-    sha224_ctx*: sha224_finalize, \
-    sha256_ctx*: sha256_finalize, \
-    sha384_ctx*: sha384_finalize, \
-    sha512_ctx*: sha512_finalize, \
-    sha512_224_ctx*: sha512_224_finalize, \
-    sha512_256_ctx*: sha512_256_finalize \
-)(ctx)
-
-#define sha_extract(hash, ctx) _Generic((ctx), \
-    sha_ctx*: sha_ctx_extract, \
-    sha1_ctx*: sha1_extract, \
-    sha224_ctx*: sha224_extract, \
-    sha256_ctx*: sha256_extract, \
-    sha384_ctx*: sha384_extract, \
-    sha512_ctx*: sha512_extract, \
-    sha512_224_ctx*: sha512_224_extract, \
-    sha512_256_ctx*: sha512_256_extract \
-)(hash, ctx)
+#endif

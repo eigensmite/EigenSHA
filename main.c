@@ -28,7 +28,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "sha3.h"
+#include "eigensha.h"
 
 /* 
  * Parse command-line arguments for input filename and SHA-3 output size.
@@ -39,29 +39,24 @@
  * argc     - number of command-line arguments
  * argv     - array of command-line arguments
  */
-static void parameters(int* index, int* length, char *filename, int argc, char** argv);
+static void parameters(int* index, enum Sha *sha, char *filename, int argc, char** argv);
 
+static const char *sha_to_string(enum Sha sha);
 
 int main (int argc, char **argv) {
 
     /* Default hash output size and input filename */
-    int bits = 256;
+    enum Sha sha = SHA_3_256;
     char filename[256] = {0};
 
     /* Parse up to first two command-line arguments */
     for (int i = 1; i < 3; i++){
-        parameters(&i, &bits, filename, argc, argv);
+        parameters(&i, &sha, filename, argc, argv);
     }
 
     /* Initialize sponge according to SHA-3 output size */
-    sponge_ctx ctx;
-    switch (bits) {
-        case 224: sponge_init(&ctx, SHA3_224); break;
-        case 256: sponge_init(&ctx, SHA3_256); break;
-        case 384: sponge_init(&ctx, SHA3_384); break;
-        case 512: sponge_init(&ctx, SHA3_512); break;
-        default: exit(1);
-    }
+    eigensha_ctx ctx;
+    eigensha_init(&ctx, sha);
 
     /* Open file or default to stdin if no filename provided */
     FILE *f;
@@ -79,22 +74,40 @@ int main (int argc, char **argv) {
     uint8_t buffer[4096];
     size_t bytesRead;
     while ((bytesRead = fread(buffer, 1, sizeof(buffer), f)) > 0)
-        sponge_absorb(&ctx, buffer, bytesRead);
+        eigensha_update(&ctx, buffer, bytesRead);
     if (f != stdin) fclose(f);
 
     /* Finalize absorption and pad sponge */
-    sponge_pad(&ctx);
+    eigensha_finalize(&ctx);
 
     /* Squeeze hash output of specified length */
     uint8_t hash[512];
-    sponge_squeeze(hash, &ctx);
+    eigensha_extract(hash, &ctx);
+    eigensha_free(&ctx);
 
     /* Print hash in hexadecimal format */
-    for (int i = 0; i < ctx.out; i++) printf("%02x", hash[i]);
+    for (int i = 0; i < ctx.ops->hash_size; i++) printf("%02x", hash[i]);
     if (filename[0] != 0) printf("  %s\n", filename);
     else printf("  -\n");
 
     return 0;
+}
+
+static const char *sha_to_string(enum Sha sha) {
+    switch (sha) {
+        case SHA_1:       return "SHA-1:       ";
+        case SHA_224:     return "SHA-224:     ";
+        case SHA_256:     return "SHA-256:     ";
+        case SHA_384:     return "SHA-384:     ";
+        case SHA_512:     return "SHA-512:     ";
+        case SHA_512_224: return "SHA-512/224: ";
+        case SHA_512_256: return "SHA-512/256: ";
+        case SHA_3_224:   return "SHA3-224:    ";
+        case SHA_3_256:   return "SHA3-256:    ";
+        case SHA_3_384:   return "SHA3-384:    ";
+        case SHA_3_512:   return "SHA3-512:    ";
+        default:          return "UNKNOWN?!?:  ";
+    }
 }
 
 /*
@@ -104,20 +117,34 @@ int main (int argc, char **argv) {
  * If argument is "-224", "-256", "-384", or "-512", set output length.
  * Otherwise, treat argument as input filename.
  */
-static void parameters(int* index, int* length, char *filename, int argc, char** argv) {
+static void parameters(int* index, enum Sha *sha, char *filename, int argc, char** argv) {
     if (argc > *index) {
 
         if (strcmp(argv[*index], "-h") == 0 || strcmp(argv[*index], "--help") == 0) {
             fprintf(stderr, "Usage: \n\t%s <path/to/file> [-224|-256|-384|-512]\n\tcat <path/to/file> | %s [-224|-256|-384|-512]\n\techo -n \"\" | %s\n", argv[0], argv[0], argv[0]);
             exit(1);
         } else if (strcmp(argv[*index], "-256") == 0) {
-            *length = 256;
+            *sha = SHA_256;
         } else if (strcmp(argv[*index], "-224") == 0) {
-            *length = 224;
+            *sha = SHA_224;
         } else if (strcmp(argv[*index], "-384") == 0) {
-            *length = 384;
+            *sha = SHA_384;
         } else if (strcmp(argv[*index], "-512") == 0) {
-            *length = 512;
+            *sha = SHA_512;
+        } else if (strcmp(argv[*index], "-512/224") == 0) {
+            *sha = SHA_512_224;
+        } else if (strcmp(argv[*index], "-512/256") == 0) {
+            *sha = SHA_512_256;
+        } else if (strcmp(argv[*index], "-3_256") == 0) {
+            *sha = SHA_3_256;
+        } else if (strcmp(argv[*index], "-3_224") == 0) {
+            *sha = SHA_3_224;
+        } else if (strcmp(argv[*index], "-3_384") == 0) {
+            *sha = SHA_3_384;
+        } else if (strcmp(argv[*index], "-3_512") == 0) {
+            *sha = SHA_3_512;
+        } else if (strcmp(argv[*index], "-1") == 0) {
+            *sha = SHA_1;
         } else {
             /* Copy argument to filename buffer (truncate if too long) */
             strncpy(filename, argv[*index], 255);
