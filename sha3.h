@@ -64,7 +64,7 @@ typedef struct {
 typedef struct {
     const size_t rate;
     const size_t out;
-} SHA_3;
+} SHA_3_param_set;
 
 /*
  * Predefined parameter sets for the standard SHA-3 hash functions
@@ -75,7 +75,7 @@ typedef struct {
  * SHA3_384 - parameters for SHA3-384 (48-byte output)
  * SHA3_512 - parameters for SHA3-512 (64-byte output)
  */
-extern const SHA_3 SHA3_224, SHA3_256, SHA3_384, SHA3_512;
+extern const SHA_3_param_set SHA3_224_param_set, SHA3_256_param_set, SHA3_384_param_set, SHA3_512_param_set;
 
 /*
  * Initialize the sponge context with SHA-3 parameters.
@@ -83,7 +83,7 @@ extern const SHA_3 SHA3_224, SHA3_256, SHA3_384, SHA3_512;
  * ctx  - sponge context
  * sha  - SHA-3 parameter set (defines rate and output size)
  */
-void sponge_init(sponge_ctx *ctx, const SHA_3 sha);
+void sponge_init(sponge_ctx *ctx, const SHA_3_param_set sha);
 
 /*
  * Absorb data into the sponge.

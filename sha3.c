@@ -20,17 +20,18 @@
 #include "sha3.h"
 
 /* Predefined SHA-3 parameter sets */
-const SHA_3 SHA3_224 = {.rate=144, .out=28},
-            SHA3_256 = {.rate=136, .out=32},
-            SHA3_384 = {.rate=104, .out=48},
-            SHA3_512 = {.rate=72,  .out=64};
+const SHA_3_param_set 
+            SHA3_224_param_set = {.rate=144, .out=28},
+            SHA3_256_param_set = {.rate=136, .out=32},
+            SHA3_384_param_set = {.rate=104, .out=48},
+            SHA3_512_param_set = {.rate=72,  .out=64};
 
 
 /*
  * Initialize the sponge context with the specified SHA-3 parameters.
  * Resets the state and buffer.
  */
-void sponge_init(sponge_ctx *ctx, const SHA_3 sha) {
+void sponge_init(sponge_ctx *ctx, const SHA_3_param_set sha) {
     for (int i = 0; i < 25; i++) ctx->state[i] = 0;
     for (int i = 0; i < 200; i++) ctx->buf[i] = 0;
     ctx->pos  = 0;

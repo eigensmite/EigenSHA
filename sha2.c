@@ -1,6 +1,8 @@
 
 #include "sha2.h"
 
+// #define DEBUG
+
 
 void print_hash_1(const uint32_t hash[5]) {
     for (int i = 0; i < 5; i++) {
@@ -213,20 +215,26 @@ static void update_intermediate_hash_1(sha1_ctx *ctx) {
         W[t] = ROTL_32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
     }
 
+    #if defined(DEBUG)
     print_hash_1(ctx->hash);
     print_block_1(W);
+    #endif
 
     uint32_t    a = ctx->hash[0], b = ctx->hash[1],
                 c = ctx->hash[2], d = ctx->hash[3],
                 e = ctx->hash[4];
                 
+        #if defined(DEBUG)
         printf("          A        B        C        D        E\n");
+        #endif
+
     for (int t = 0; t < 80; t++) {
         uint32_t T = ROTL_32(a, 5) + f_32(b,c,d,t) + e + K_1[t/20] + W[t];
         e = d; d = c; c = ROTL_32(b, 30); b = a; a = T;
 
-        //printf("t=%2d: %08X %08X %08X %08X %08X\n",t,ctx->hash[0],ctx->hash[1],ctx->hash[2],ctx->hash[3],ctx->hash[4]);
+        #if defined(DEBUG)
         printf("t=%2d: %08X %08X %08X %08X %08X\n",t,a,b,c,d,e);
+        #endif
     }
     ctx->hash[0] += a; ctx->hash[1] += b; ctx->hash[2] += c;
     ctx->hash[3] += d; ctx->hash[4] += e;
@@ -244,20 +252,31 @@ static void update_intermediate_hash_512(sha512_ctx *ctx) {
         W[t] = LITTLE_SIGMA_512_1(W[t-2]) + W[t-7] + 
                 LITTLE_SIGMA_512_0(W[t-15]) + W[t-16];
     }
+
+    #if defined(DEBUG)
     print_hash_512(ctx->hash);
     print_block_512(W);
+    #endif
+
     uint64_t    a = ctx->hash[0], b = ctx->hash[1],
                 c = ctx->hash[2], d = ctx->hash[3],
                 e = ctx->hash[4], f = ctx->hash[5],
                 g = ctx->hash[6], h = ctx->hash[7];
-        printf("                  A                B                C                D                E                F                G                H\n");
-    for (int t = 0; t < 80; t++) {
+
+    #if defined(DEBUG)
+    printf("                  A                B                C                D                E                F                G                H\n");
+    #endif
+
+        for (int t = 0; t < 80; t++) {
         uint64_t T_1 = h + BIG_SIGMA_512_1(e) + 
             Ch_64(e, f, g) + K_512[t] + W[t];
         uint64_t T_2 = BIG_SIGMA_512_0(a) + Maj_64(a,b,c);
         h = g; g = f; f = e; e = d + T_1; 
         d = c; c = b; b = a; a = T_1 + T_2;
+
+        #if defined(DEBUG)
         printf("t=%2d: %016lX %016lX %016lX %016lX %016lX %016lX %016lX %016lX\n",t,a,b,c,d,e,f,g,h);
+        #endif
     }
 
     ctx->hash[0] += a; ctx->hash[1] += b;
@@ -277,20 +296,30 @@ static void update_intermediate_hash_256(sha256_ctx *ctx) {
         W[t] = LITTLE_SIGMA_256_1(W[t-2]) + W[t-7] + 
                 LITTLE_SIGMA_256_0(W[t-15]) + W[t-16];
     }
-    // print_hash(ctx->hash);
-    // print_block(W);
+
+    #if defined(DEBUG)
+    print_hash(ctx->hash);
+    print_block(W);
+    #endif
+
     uint32_t    a = ctx->hash[0], b = ctx->hash[1],
                 c = ctx->hash[2], d = ctx->hash[3],
                 e = ctx->hash[4], f = ctx->hash[5],
                 g = ctx->hash[6], h = ctx->hash[7];
-        // printf("          A        B        C        D        E        F        G        H\n");
+        
+        #if defined(DEBUG)
+        printf("          A        B        C        D        E        F        G        H\n");
+        #endif
+
     for (int t = 0; t < 64; t++) {
         uint32_t T_1 = h + BIG_SIGMA_256_1(e) + 
             Ch_32(e, f, g) + K_256[t] + W[t];
         uint32_t T_2 = BIG_SIGMA_256_0(a) + Maj_32(a,b,c);
         h = g; g = f; f = e; e = d + T_1; 
         d = c; c = b; b = a; a = T_1 + T_2;
-        // printf("t=%2d: %08X %08X %08X %08X %08X %08X %08X %08X\n",t,a,b,c,d,e,f,g,h);
+        #if defined(DEBUG)
+        printf("t=%2d: %08X %08X %08X %08X %08X %08X %08X %08X\n",t,a,b,c,d,e,f,g,h);
+        #endif
     }
 
     ctx->hash[0] += a; ctx->hash[1] += b;
@@ -300,12 +329,15 @@ static void update_intermediate_hash_256(sha256_ctx *ctx) {
 }
 
 void sha1_update(sha1_ctx *ctx, uint8_t *data, size_t len) {
+
+    // printf("\nupdate\n");
     while (len > 0) {
         size_t take = 512/8 - ctx->pos;
         if (take > len) take = len;
         memcpy(ctx->buf + ctx->pos, data, take);
         data += take;
         ctx->pos += take;
+        // printf("take: %ld\n", take);
         // printf("pos:%ld",ctx->pos);
         ctx->len += take;
         len -= take;
@@ -475,7 +507,7 @@ void sha512_224_finalize(sha512_224_ctx *ctx) {
 
 void sha256_finalize(sha256_ctx *ctx) {
     int zero_bits = 448 - (8*ctx->len % 512) - 1;
-    printf("zero bits %d\n", zero_bits);
+    // printf("zero bits %d\n", zero_bits);
     if (zero_bits < 0) {
         memset(ctx->buf + ctx->pos, 0x00, 512/8 - ctx->pos);
         ctx->buf[ctx->pos] = 0x80;
@@ -530,28 +562,121 @@ void sha224_extract(uint8_t hash[28], sha224_ctx *ctx) {
         ((uint32_t *)hash)[i] = __builtin_bswap32(ctx->hash[i]);
 }
 
+DEFINE_SHA_WRAPPERS(sha1,       sha1_ctx)
+DEFINE_SHA_WRAPPERS(sha224,     sha224_ctx)
+DEFINE_SHA_WRAPPERS(sha256,     sha256_ctx)
+DEFINE_SHA_WRAPPERS(sha384,     sha384_ctx)
+DEFINE_SHA_WRAPPERS(sha512,     sha512_ctx)
+DEFINE_SHA_WRAPPERS(sha512_224, sha512_224_ctx)
+DEFINE_SHA_WRAPPERS(sha512_256, sha512_256_ctx)
+
+DEFINE_SHA_3_WRAPPERS(sha3_224, SHA3_224)
+DEFINE_SHA_3_WRAPPERS(sha3_256, SHA3_256)
+DEFINE_SHA_3_WRAPPERS(sha3_384, SHA3_384)
+DEFINE_SHA_3_WRAPPERS(sha3_512, SHA3_512)
+
+
+const sha_ops sha1_ops       = DEFINE_SHA_OPS(sha1,       sha1_ctx,       20);
+const sha_ops sha224_ops     = DEFINE_SHA_OPS(sha224,     sha224_ctx,     28);
+const sha_ops sha256_ops     = DEFINE_SHA_OPS(sha256,     sha256_ctx,     32);
+const sha_ops sha384_ops     = DEFINE_SHA_OPS(sha384,     sha384_ctx,     48);
+const sha_ops sha512_ops     = DEFINE_SHA_OPS(sha512,     sha512_ctx,     64);
+const sha_ops sha512_224_ops = DEFINE_SHA_OPS(sha512_224, sha512_224_ctx, 28);
+const sha_ops sha512_256_ops = DEFINE_SHA_OPS(sha512_256, sha512_256_ctx, 32);
+
+const sha_ops sha3_224_ops = DEFINE_SHA_3_OPS(sha3_224, 28);
+const sha_ops sha3_256_ops = DEFINE_SHA_3_OPS(sha3_256, 32);
+const sha_ops sha3_384_ops = DEFINE_SHA_3_OPS(sha3_384, 48);
+const sha_ops sha3_512_ops = DEFINE_SHA_3_OPS(sha3_512, 64);
+
+
+typedef struct {
+    const sha_ops *ops;
+    void *ctx;
+} sha_ctx;
+
+static inline void sha_ctx_init(sha_ctx *s, enum Sha sha) {
+    switch (sha) {
+        case SHA_1:       s->ops = &sha1_ops;       break;
+        case SHA_224:     s->ops = &sha224_ops;     break;
+        case SHA_256:     s->ops = &sha256_ops;     break;
+        case SHA_384:     s->ops = &sha384_ops;     break;
+        case SHA_512:     s->ops = &sha512_ops;     break;
+        case SHA_512_224: s->ops = &sha512_224_ops; break;
+        case SHA_512_256: s->ops = &sha512_256_ops; break;
+        case SHA_3_224:   s->ops = &sha3_224_ops;   break;
+        case SHA_3_256:   s->ops = &sha3_256_ops;   break;
+        case SHA_3_384:   s->ops = &sha3_384_ops;   break;
+        case SHA_3_512:   s->ops = &sha3_512_ops;   break;
+    }
+    s->ctx = malloc(s->ops->ctx_size);
+    s->ops->init(s->ctx);
+}
+
+static inline void sha_ctx_free(sha_ctx *s) {
+    free(s->ctx);
+}
+
+static inline void sha_ctx_update(sha_ctx *s, void *data, size_t len) {
+    s->ops->update(s->ctx, data, len);
+}
+
+static inline void sha_ctx_finalize(sha_ctx *s) {
+    s->ops->finalize(s->ctx);
+}
+
+static inline void sha_ctx_extract(uint8_t *hash, sha_ctx *s) {
+    s->ops->extract(hash, s->ctx);
+}
+
+
+const char *sha_to_string(enum Sha sha) {
+    switch (sha) {
+        case SHA_1:       return "SHA-1:       ";
+        case SHA_224:     return "SHA-224:     ";
+        case SHA_256:     return "SHA-256:     ";
+        case SHA_384:     return "SHA-384:     ";
+        case SHA_512:     return "SHA-512:     ";
+        case SHA_512_224: return "SHA-512/224: ";
+        case SHA_512_256: return "SHA-512/256: ";
+        case SHA_3_224:   return "SHA3-224:    ";
+        case SHA_3_256:   return "SHA3-256:    ";
+        case SHA_3_384:   return "SHA3-384:    ";
+        case SHA_3_512:   return "SHA3-512:    ";
+        default:          return "UNKNOWN?!?:  ";
+    }
+}
+
 int main (int argc, char **argv) {
-
-    sha224_ctx ctx;
-
-    sha_init(&ctx);
 
     uint8_t buffer[4096];
     size_t bytesRead;
-    while ((bytesRead = fread(buffer, 1, sizeof(buffer), stdin)) > 0) {
-        printf("bytesRead %ld\n", bytesRead);
+    // printf("stdin?\n");
+    // while ((
+        bytesRead = fread(buffer, 1, sizeof(buffer), stdin);
+    // ) > 0) {
+    //     // printf("bytesRead %ld\n", bytesRead);
+    // }
+
+    for (int i = 0; i < SHA_COUNT; i++) {
+        sha_ctx ctx;
+
+        sha_ctx_init(&ctx, i);
+
         sha_update(&ctx, buffer, bytesRead);
+
+        sha_finalize(&ctx);
+
+        uint8_t hash[128] = {0};
+        sha_extract(hash, &ctx);
+
+        printf("%s", sha_to_string(i));
+
+        for (int i = 0; i < ctx.ops->hash_size; i++) printf("%02x", hash[i]);
+        printf("\n");
+
+        sha_ctx_free(&ctx);
     }
-
-    sha_finalize(&ctx);
-
-    // printf("%x\n",ctx.hash[0]);
-    uint8_t hash[128] = {0};
-    sha_extract(hash, &ctx);
-
-    printf("\n");
-    for (int i = 0; i < ctx.out; i++) printf("%02x", hash[i]);
-    printf("\n");
 
     return 0;
 
