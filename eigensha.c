@@ -14,6 +14,7 @@ void eigensha_init(eigensha_ctx *s, enum Sha sha) {
         case SHA_3_256:   s->ops = &sha3_256_ops;   break;
         case SHA_3_384:   s->ops = &sha3_384_ops;   break;
         case SHA_3_512:   s->ops = &sha3_512_ops;   break;
+        case SHA_COUNT: default: return;
     }
     s->ctx = malloc(s->ops->ctx_size);
     s->ops->init(s->ctx);
@@ -34,7 +35,6 @@ void eigensha_finalize(eigensha_ctx *s) {
 void eigensha_extract(uint8_t *hash, eigensha_ctx *s) {
     s->ops->extract(hash, s->ctx);
 }
-
 
 // int main (int argc, char **argv) {
 

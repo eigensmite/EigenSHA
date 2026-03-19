@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "sha_ops.h"
 
@@ -27,7 +28,17 @@ void eigensha_finalize(eigensha_ctx *s) ;
 
 void eigensha_extract(uint8_t *hash, eigensha_ctx *s);
 
+/** Prevents accidental use of sha_init() with eigensha_ctx* **/
+__attribute__((deprecated("CRITICAL WARNING: sha_init: invalid context type! Use eigensha_ctx* with eigensha_init() and eigensha_free()")))
+__attribute__((unused))
+static inline void no_generic_eigensha_init_implementation(void* ctx) {
+    ctx = (void*)ctx;
+    printf("sha_init: invalid context type! Use eigensha_ctx* with eigensha_init() and eigensha_free()\n");
+    exit(1);
+}
+
 #define sha_init(ctx) _Generic((ctx), \
+    eigensha_ctx*: no_generic_eigensha_init_implementation, \
     sha1_ctx*: sha1_init, \
     sha224_ctx*: sha224_init, \
     sha256_ctx*: sha256_init, \

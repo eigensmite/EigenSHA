@@ -19,7 +19,7 @@
 #include "keccak_f.h"
 
 /* Rotation offsets for the Rho step (ρ) */
-const static int RHO_Z[5][5] = {
+static const int RHO_Z[5][5] = {
     {  0,  1, 62, 28, 27 },
     { 36, 44,  6, 55, 20 },
     {  3, 10, 43, 25, 39 },
@@ -28,10 +28,10 @@ const static int RHO_Z[5][5] = {
 };
 
 /* Pi step Y-coordinate mapping (π) for lane permutation */
-const static int PI_Y[25] = { 2, 1, 2, 3, 3, 0, 1, 3, 1, 4, 4, 0, 3, 4, 3, 2, 2, 0, 4, 2, 4, 1, 1, 0 };
+static const int PI_Y[25] = { 2, 1, 2, 3, 3, 0, 1, 3, 1, 4, 4, 0, 3, 4, 3, 2, 2, 0, 4, 2, 4, 1, 1, 0 };
 
 /* Round constants for the Iota step (ι) */
-const static uint64_t IOTA_RC[24] = { 
+static const uint64_t IOTA_RC[24] = { 
     0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000, 
     0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009, 
     0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A, 

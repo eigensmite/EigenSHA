@@ -1,6 +1,7 @@
 
 #include "sha_algo.h"
 
+#ifdef DEBUG
 static void print_hash_1(const uint32_t hash[5]) {
     for (int i = 0; i < 5; i++) {
         printf("H[%d] = %08X\n", i, hash[i]);
@@ -42,6 +43,7 @@ static void print_block_512(const uint64_t block[16]) {
     }
     printf("\n");
 }
+#endif
 
 static const uint32_t K_1[4] = {
     0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6

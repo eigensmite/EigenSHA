@@ -41,7 +41,7 @@
  */
 static void parameters(int* index, enum Sha *sha, char *filename, int argc, char** argv);
 
-static const char *sha_to_string(enum Sha sha);
+// static const char *sha_to_string(enum Sha sha);
 
 void print_help(const char *prog);
 
@@ -58,6 +58,9 @@ int main (int argc, char **argv) {
 
     /* Initialize sponge according to SHA-3 output size */
     eigensha_ctx ctx;
+
+    // sha_init(&ctx);
+
     eigensha_init(&ctx, sha);
 
     /* Open file or default to stdin if no filename provided */
@@ -88,7 +91,7 @@ int main (int argc, char **argv) {
     eigensha_free(&ctx);
 
     /* Print hash in hexadecimal format */
-    for (int i = 0; i < ctx.ops->hash_size; i++) printf("%02x", hash[i]);
+    for (size_t i = 0; i < ctx.ops->hash_size; i++) printf("%02x", hash[i]);
     if (filename[0] != 0) printf("  %s\n", filename);
     else printf("  -\n");
 
@@ -129,22 +132,22 @@ void print_help(const char *prog) {
     printf("\t  - If no option is specified, SHA-256 is used by default.\n\n");
 }
 
-static const char *sha_to_string(enum Sha sha) {
-    switch (sha) {
-        case SHA_1:       return "SHA-1:       ";
-        case SHA_224:     return "SHA-224:     ";
-        case SHA_256:     return "SHA-256:     ";
-        case SHA_384:     return "SHA-384:     ";
-        case SHA_512:     return "SHA-512:     ";
-        case SHA_512_224: return "SHA-512/224: ";
-        case SHA_512_256: return "SHA-512/256: ";
-        case SHA_3_224:   return "SHA3-224:    ";
-        case SHA_3_256:   return "SHA3-256:    ";
-        case SHA_3_384:   return "SHA3-384:    ";
-        case SHA_3_512:   return "SHA3-512:    ";
-        default:          return "UNKNOWN?!?:  ";
-    }
-}
+// static const char *sha_to_string(enum Sha sha) {
+//     switch (sha) {
+//         case SHA_1:       return "SHA-1:       ";
+//         case SHA_224:     return "SHA-224:     ";
+//         case SHA_256:     return "SHA-256:     ";
+//         case SHA_384:     return "SHA-384:     ";
+//         case SHA_512:     return "SHA-512:     ";
+//         case SHA_512_224: return "SHA-512/224: ";
+//         case SHA_512_256: return "SHA-512/256: ";
+//         case SHA_3_224:   return "SHA3-224:    ";
+//         case SHA_3_256:   return "SHA3-256:    ";
+//         case SHA_3_384:   return "SHA3-384:    ";
+//         case SHA_3_512:   return "SHA3-512:    ";
+//         default:          return "UNKNOWN?!?:  ";
+//     }
+// }
 
 /*
  * Parse a single command-line argument to determine filename or SHA-3 output length.
