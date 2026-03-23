@@ -36,6 +36,21 @@ void eigensha_extract(uint8_t *hash, eigensha_ctx *s) {
     s->ops->extract(hash, s->ctx);
 }
 
+size_t eigensha_get_hash_len(eigensha_ctx *s) {
+    return s->ops->hash_size;
+}
+
+void eigensha_hash_to_string(char *char_hash, uint8_t *hash, size_t hash_len) {
+    for (size_t i = 0; i < hash_len; i++) {
+        // (i * 2) because each byte takes up two characters in the string
+        // %02x: 0 means pad with zeros, 2 means width of two, x means lowercase hex
+        sprintf(char_hash + (i * 2), "%02x", hash[i]);
+    }
+    // Explicitly null-terminate the end of the string
+    char_hash[hash_len * 2] = '\0';
+}
+
+
 // int main (int argc, char **argv) {
 
 //     uint8_t buffer[4096];

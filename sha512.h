@@ -1,3 +1,19 @@
+/******************************************************************************
+ * sha_512.h
+ *
+ * API for the SHA-512 family of cryptographic hash functions.
+ *
+ * This header provides the interface for SHA-512, SHA-384, SHA-512/256, 
+ * and SHA-512/224. These algorithms share the same underlying 512-bit 
+ * transformation engine but differ in initialization vectors (IV) and 
+ * final truncation lengths.
+ *
+ * Author: eigensmite
+ * Date: 2026-03-22
+ *
+ * Reference:
+ * - NIST FIPS 180-4 Secure Hash Standard (SHS)
+ *****************************************************************************/
 
 #ifndef SHA_512_H
 #define SHA_512_H

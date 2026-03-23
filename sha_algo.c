@@ -1,54 +1,72 @@
+/******************************************************************************
+ * sha_algo.c
+ *
+ * Core transformation functions for SHA-1, SHA-256, and SHA-512.
+ *
+ * This implementation defines the low-level block-processing engines (compression 
+ * functions) used to update internal hash states. These implementations 
+ * adhere to the FIPS 180-4 Secure Hash Standard (SHS).
+ *
+ * Author: eigensmite
+ * Date: 2026-03-22
+ *
+ * Reference:
+ * - National Institute of Standards and Technology (NIST) FIPS 180-4
+ *****************************************************************************/
 
 #include "sha_algo.h"
 
-#ifdef DEBUG
-static void print_hash_1(const uint32_t hash[5]) {
-    for (int i = 0; i < 5; i++) {
-        printf("H[%d] = %08X\n", i, hash[i]);
-    }
-    printf("\n");
-}
 
-static void print_block_1(const uint32_t block[16]) {
-    for(int i = 0; i < 16; i++) {
-        printf("W[%d] = %08X\n", i, block[i]);
-    }
-    printf("\n");
-}
+// #ifdef DEBUG
+// static void print_hash_1(const uint32_t hash[5]) {
+//     for (int i = 0; i < 5; i++) {
+//         printf("H[%d] = %08X\n", i, hash[i]);
+//     }
+//     printf("\n");
+// }
 
-static void print_hash(const uint32_t hash[8]) {
-    for (int i = 0; i < 8; i++) {
-        printf("H[%d] = %08X\n", i, hash[i]);
-    }
-    printf("\n");
-}
+// static void print_block_1(const uint32_t block[16]) {
+//     for(int i = 0; i < 16; i++) {
+//         printf("W[%d] = %08X\n", i, block[i]);
+//     }
+//     printf("\n");
+// }
 
-static void print_block(const uint32_t block[16]) {
-    for(int i = 0; i < 16; i++) {
-        printf("W[%d] = %08X\n", i, block[i]);
-    }
-    printf("\n");
-}
+// static void print_hash(const uint32_t hash[8]) {
+//     for (int i = 0; i < 8; i++) {
+//         printf("H[%d] = %08X\n", i, hash[i]);
+//     }
+//     printf("\n");
+// }
 
-static void print_hash_512(const uint64_t hash[8]) {
-    for (int i = 0; i < 8; i++) {
-        printf("H[%d] = %016lX\n", i, hash[i]);
-    }
-    printf("\n");
-}
+// static void print_block(const uint32_t block[16]) {
+//     for(int i = 0; i < 16; i++) {
+//         printf("W[%d] = %08X\n", i, block[i]);
+//     }
+//     printf("\n");
+// }
 
-static void print_block_512(const uint64_t block[16]) {
-    for(int i = 0; i < 16; i++) {
-        printf("W[%d] = %016lX\n", i, block[i]);
-    }
-    printf("\n");
-}
-#endif
+// static void print_hash_512(const uint64_t hash[8]) {
+//     for (int i = 0; i < 8; i++) {
+//         printf("H[%d] = %016lX\n", i, hash[i]);
+//     }
+//     printf("\n");
+// }
 
+// static void print_block_512(const uint64_t block[16]) {
+//     for(int i = 0; i < 16; i++) {
+//         printf("W[%d] = %016lX\n", i, block[i]);
+//     }
+//     printf("\n");
+// }
+// #endif
+
+/* SHA-1 Initial Hash Constants */
 static const uint32_t K_1[4] = {
     0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xca62c1d6
 };
 
+/* SHA-256 Initial Hash Constants */
 static const uint32_t K_256[64] = {
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -60,6 +78,7 @@ static const uint32_t K_256[64] = {
     0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 };
 
+/* SHA-512 Initial Hash Constants */
 static const uint64_t K_512[80] = {
     0x428a2f98d728ae22ULL, 0x7137449123ef65cdULL, 0xb5c0fbcfec4d3b2fULL, 0xe9b5dba58189dbbcULL,
     0x3956c25bf348b538ULL, 0x59f111f1b605d019ULL, 0x923f82a4af194f9bULL, 0xab1c5ed5da6d8118ULL,
@@ -126,6 +145,8 @@ static inline uint32_t LITTLE_SIGMA_256_0(uint32_t x) {
 static inline uint32_t LITTLE_SIGMA_256_1(uint32_t x) {
     return ROTR_32(x, 17) ^ ROTR_32(x, 19) ^ SHR_32(x, 10);
 }
+/***********************************/
+
 
 /** SHA-384 and SHA-512 functions **/
 static inline uint64_t Ch_64(uint64_t x, uint64_t y, uint64_t z) {
@@ -159,7 +180,16 @@ static inline uint64_t LITTLE_SIGMA_512_0(uint64_t x) {
 static inline uint64_t LITTLE_SIGMA_512_1(uint64_t x) {
     return ROTR_64(x, 19) ^ ROTR_64(x, 61) ^ SHR_64(x, 6);
 }
+/***********************************/
 
+/**
+ * update_intermediate_hash_1 - Process a single 512-bit SHA-1 message block.
+ * @hash: The 160-bit internal state (5 x 32-bit words) to be updated.
+ * @buf:  The 64-byte message block to be processed.
+ *
+ * Updates the current intermediate hash state using the SHA-1 transform 
+ * constants and logical functions.
+ */
 void update_intermediate_hash_1(uint32_t hash[5], uint8_t buf[64]) {
     uint32_t W[80];
     
@@ -171,32 +201,40 @@ void update_intermediate_hash_1(uint32_t hash[5], uint8_t buf[64]) {
         W[t] = ROTL_32(W[t-3] ^ W[t-8] ^ W[t-14] ^ W[t-16], 1);
     }
 
-    #if defined(DEBUG)
-    print_hash_1(hash);
-    print_block_1(W);
-    #endif
+    // #if defined(DEBUG)
+    // print_hash_1(hash);
+    // print_block_1(W);
+    // #endif
 
     uint32_t    a = hash[0], b = hash[1],
                 c = hash[2], d = hash[3],
                 e = hash[4];
                 
-        #if defined(DEBUG)
-        printf("          A        B        C        D        E\n");
-        #endif
+        // #if defined(DEBUG)
+        // printf("          A        B        C        D        E\n");
+        // #endif
 
     for (int t = 0; t < 80; t++) {
         uint32_t T = ROTL_32(a, 5) + f_32(b,c,d,t) + e + K_1[t/20] + W[t];
         e = d; d = c; c = ROTL_32(b, 30); b = a; a = T;
 
-        #if defined(DEBUG)
-        printf("t=%2d: %08X %08X %08X %08X %08X\n",t,a,b,c,d,e);
-        #endif
+        // #if defined(DEBUG)
+        // printf("t=%2d: %08X %08X %08X %08X %08X\n",t,a,b,c,d,e);
+        // #endif
     }
     hash[0] += a; hash[1] += b; hash[2] += c;
     hash[3] += d; hash[4] += e;
 }
 
-void update_intermediate_hash_512(uint64_t hash[8], uint8_t buf[64]) {
+/**
+ * update_intermediate_hash_512 - Process a single 1024-bit SHA-512 message block.
+ * @hash: The 512-bit internal state (8 x 64-bit words) to be updated.
+ * @buf:  The 128-byte message block to be processed.
+ *
+ * Updates the current intermediate hash state using the SHA-512 transform 
+ * constants and logical functions.
+ */
+void update_intermediate_hash_512(uint64_t hash[8], uint8_t buf[128]) {
     uint64_t W[80];
 
     /* build message schedule */
@@ -209,19 +247,19 @@ void update_intermediate_hash_512(uint64_t hash[8], uint8_t buf[64]) {
                 LITTLE_SIGMA_512_0(W[t-15]) + W[t-16];
     }
 
-    #if defined(DEBUG)
-    print_hash_512(hash);
-    print_block_512(W);
-    #endif
+    // #if defined(DEBUG)
+    // print_hash_512(hash);
+    // print_block_512(W);
+    // #endif
 
     uint64_t    a = hash[0], b = hash[1],
                 c = hash[2], d = hash[3],
                 e = hash[4], f = hash[5],
                 g = hash[6], h = hash[7];
 
-    #if defined(DEBUG)
-    printf("                  A                B                C                D                E                F                G                H\n");
-    #endif
+    // #if defined(DEBUG)
+    // printf("                  A                B                C                D                E                F                G                H\n");
+    // #endif
 
         for (int t = 0; t < 80; t++) {
         uint64_t T_1 = h + BIG_SIGMA_512_1(e) + 
@@ -230,9 +268,9 @@ void update_intermediate_hash_512(uint64_t hash[8], uint8_t buf[64]) {
         h = g; g = f; f = e; e = d + T_1; 
         d = c; c = b; b = a; a = T_1 + T_2;
 
-        #if defined(DEBUG)
-        printf("t=%2d: %016lX %016lX %016lX %016lX %016lX %016lX %016lX %016lX\n",t,a,b,c,d,e,f,g,h);
-        #endif
+        // #if defined(DEBUG)
+        // printf("t=%2d: %016lX %016lX %016lX %016lX %016lX %016lX %016lX %016lX\n",t,a,b,c,d,e,f,g,h);
+        // #endif
     }
 
     hash[0] += a; hash[1] += b;
@@ -241,6 +279,14 @@ void update_intermediate_hash_512(uint64_t hash[8], uint8_t buf[64]) {
     hash[6] += g; hash[7] += h;
 }
 
+/**
+ * update_intermediate_hash_256 - Process a single 512-bit SHA-256 message block.
+ * @hash: The 256-bit internal state (8 x 32-bit words) to be updated.
+ * @buf:  The 64-byte message block to be processed.
+ *
+ * Updates the current intermediate hash state using the SHA-256 transform 
+ * constants and logical functions.
+ */
 void update_intermediate_hash_256(uint32_t hash[8], uint8_t buf[64]) {
     uint32_t W[64];
     /* build message schedule */
@@ -253,19 +299,19 @@ void update_intermediate_hash_256(uint32_t hash[8], uint8_t buf[64]) {
                 LITTLE_SIGMA_256_0(W[t-15]) + W[t-16];
     }
 
-    #if defined(DEBUG)
-    print_hash(hash);
-    print_block(W);
-    #endif
+    // #if defined(DEBUG)
+    // print_hash(hash);
+    // print_block(W);
+    // #endif
 
     uint32_t    a = hash[0], b = hash[1],
                 c = hash[2], d = hash[3],
                 e = hash[4], f = hash[5],
                 g = hash[6], h = hash[7];
         
-        #if defined(DEBUG)
-        printf("          A        B        C        D        E        F        G        H\n");
-        #endif
+        // #if defined(DEBUG)
+        // printf("          A        B        C        D        E        F        G        H\n");
+        // #endif
 
     for (int t = 0; t < 64; t++) {
         uint32_t T_1 = h + BIG_SIGMA_256_1(e) + 
@@ -273,9 +319,9 @@ void update_intermediate_hash_256(uint32_t hash[8], uint8_t buf[64]) {
         uint32_t T_2 = BIG_SIGMA_256_0(a) + Maj_32(a,b,c);
         h = g; g = f; f = e; e = d + T_1; 
         d = c; c = b; b = a; a = T_1 + T_2;
-        #if defined(DEBUG)
-        printf("t=%2d: %08X %08X %08X %08X %08X %08X %08X %08X\n",t,a,b,c,d,e,f,g,h);
-        #endif
+        // #if defined(DEBUG)
+        // printf("t=%2d: %08X %08X %08X %08X %08X %08X %08X %08X\n",t,a,b,c,d,e,f,g,h);
+        // #endif
     }
 
     hash[0] += a; hash[1] += b;
