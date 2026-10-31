@@ -1,55 +1,83 @@
 
 #include "eigensha.h"
 
-void eigensha_init(eigensha_ctx *s, enum Sha sha) {
-    switch (sha) {
-        case SHA_1:       s->ops = &sha1_ops;       break;
-        case SHA_224:     s->ops = &sha224_ops;     break;
-        case SHA_256:     s->ops = &sha256_ops;     break;
-        case SHA_384:     s->ops = &sha384_ops;     break;
-        case SHA_512:     s->ops = &sha512_ops;     break;
-        case SHA_512_224: s->ops = &sha512_224_ops; break;
-        case SHA_512_256: s->ops = &sha512_256_ops; break;
-        case SHA_3_224:   s->ops = &sha3_224_ops;   break;
-        case SHA_3_256:   s->ops = &sha3_256_ops;   break;
-        case SHA_3_384:   s->ops = &sha3_384_ops;   break;
-        case SHA_3_512:   s->ops = &sha3_512_ops;   break;
-        case SHA_COUNT: default: return;
-    }
-    s->ctx = malloc(s->ops->ctx_size);
-    s->ops->init(s->ctx);
+int eigensha_init(eigensha_ctx *s, enum Sha sha) {
+  switch (sha) {
+  case SHA_1:
+    s->ops = &sha1_ops;
+    break;
+  case SHA_224:
+    s->ops = &sha224_ops;
+    break;
+  case SHA_256:
+    s->ops = &sha256_ops;
+    break;
+  case SHA_384:
+    s->ops = &sha384_ops;
+    break;
+  case SHA_512:
+    s->ops = &sha512_ops;
+    break;
+  case SHA_512_224:
+    s->ops = &sha512_224_ops;
+    break;
+  case SHA_512_256:
+    s->ops = &sha512_256_ops;
+    break;
+  case SHA_3_224:
+    s->ops = &sha3_224_ops;
+    break;
+  case SHA_3_256:
+    s->ops = &sha3_256_ops;
+    break;
+  case SHA_3_384:
+    s->ops = &sha3_384_ops;
+    break;
+  case SHA_3_512:
+    s->ops = &sha3_512_ops;
+    break;
+  case SHA_COUNT:
+  default:
+    fprintf(stderr, "ERROR: invalid SHA enum\n");
+    goto error;
+  }
+
+  if ((s->ctx = malloc(s->ops->ctx_size)) == NULL) {
+    fprintf(stderr, "ERROR: malloc failed to allocate eigensha context");
+    goto error;
+  }
+  s->ops->init(s->ctx);
+  return 0;
+
+error:
+  s->ops = NULL;
+  s->ctx = NULL;
+  return -1;
 }
 
-void eigensha_free(eigensha_ctx *s) {
-    free(s->ctx);
-}
+void eigensha_free(eigensha_ctx *s) { free(s->ctx); }
 
 void eigensha_update(eigensha_ctx *s, void *data, size_t len) {
-    s->ops->update(s->ctx, data, len);
+  s->ops->update(s->ctx, data, len);
 }
 
-void eigensha_finalize(eigensha_ctx *s) {
-    s->ops->finalize(s->ctx);
-}
+void eigensha_finalize(eigensha_ctx *s) { s->ops->finalize(s->ctx); }
 
 void eigensha_extract(uint8_t *hash, eigensha_ctx *s) {
-    s->ops->extract(hash, s->ctx);
+  s->ops->extract(hash, s->ctx);
 }
 
-size_t eigensha_get_hash_len(eigensha_ctx *s) {
-    return s->ops->hash_size;
-}
+size_t eigensha_get_hash_len(eigensha_ctx *s) { return s->ops->hash_size; }
 
 void eigensha_hash_to_string(char *char_hash, uint8_t *hash, size_t hash_len) {
-    for (size_t i = 0; i < hash_len; i++) {
-        // (i * 2) because each byte takes up two characters in the string
-        // %02x: 0 means pad with zeros, 2 means width of two, x means lowercase hex
-        sprintf(char_hash + (i * 2), "%02x", hash[i]);
-    }
-    // Explicitly null-terminate the end of the string
-    char_hash[hash_len * 2] = '\0';
+  for (size_t i = 0; i < hash_len; i++) {
+    // (i * 2) because each byte takes up two characters in the string
+    // %02x: 0 means pad with zeros, 2 means width of two, x means lowercase hex
+    sprintf(char_hash + (i * 2), "%02x", hash[i]);
+  }
+  // Explicitly null-terminate the end of the string
+  char_hash[hash_len * 2] = '\0';
 }
-
 
 // int main (int argc, char **argv) {
 
