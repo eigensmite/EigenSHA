@@ -40,36 +40,34 @@
  * argc     - number of command-line arguments
  * argv     - array of command-line arguments
  */
-static void parameters(int *index, enum Sha *sha, char *filename, int argc,
+static void parameters(int *index, enum Sha *sha, char **filename, int argc,
                        char **argv);
 
 // static const char *sha_to_string(enum Sha sha);
 
 void print_help(const char *prog);
 
-long arg_max = 1;
-
 int main(int argc, char **argv) {
-
-  arg_max = sysconf(_SC_ARG_MAX);
-  if (arg_max == -1) {
-    perror("sysconf");
-    return 1;
-  }
 
   /* Default hash output size and input filename */
   enum Sha sha = SHA_3_256;
   char *filename = NULL;
-  if ((filename = calloc(arg_max, sizeof(char))) != 0) {
-    perror("calloc failed");
-    return 1;
-  }
-
-  // char filename[arg_max] = {0};
 
   /* Parse up to first two command-line arguments */
   for (int i = 1; i < 3; i++) {
-    parameters(&i, &sha, filename, argc, argv);
+    parameters(&i, &sha, &filename, argc, argv);
+  }
+
+  /* Open file or default to stdin if no filename provided */
+  FILE *f;
+  if (filename == NULL) {
+    f = stdin;
+  } else {
+    f = fopen(filename, "rb");
+    if (!f) {
+      perror("Failed to open file");
+      return 1;
+    }
   }
 
   /* Initialize sponge according to SHA-3 output size */
@@ -81,18 +79,6 @@ int main(int argc, char **argv) {
     fprintf(stderr, "ERROR: eigensha_init failed.\n");
     fprintf(stderr, "Aborting...\n");
     return 1;
-  }
-
-  /* Open file or default to stdin if no filename provided */
-  FILE *f;
-  if (filename[0] == 0) {
-    f = stdin;
-  } else {
-    f = fopen(filename, "rb");
-    if (!f) {
-      perror("Failed to open file");
-      return 1;
-    }
   }
 
   /* Read data from file or stdin and absorb into sponge */
@@ -113,14 +99,13 @@ int main(int argc, char **argv) {
   /* Print hash in hexadecimal format */
   for (size_t i = 0; i < ctx.ops->hash_size; i++)
     printf("%02x", hash[i]);
-  if (filename[0] != 0)
+  if (filename != NULL)
     printf("  %s\n", filename);
   else
     printf("  -\n");
 
   /* Free SHA context */
   eigensha_free(&ctx);
-  free(filename);
   return 0;
 }
 
@@ -183,7 +168,7 @@ void print_help(const char *prog) {
  * If argument is "-224", "-256", "-384", or "-512", set output length.
  * Otherwise, treat argument as input filename.
  */
-static void parameters(int *index, enum Sha *sha, char *filename, int argc,
+static void parameters(int *index, enum Sha *sha, char **filename, int argc,
                        char **argv) {
   if (argc > *index) {
 
@@ -218,8 +203,7 @@ static void parameters(int *index, enum Sha *sha, char *filename, int argc,
       exit(1);
     } else {
       /* Copy argument to filename buffer (truncate if too long) */
-      strncpy(filename, argv[*index], arg_max - 1);
-      filename[arg_max - 1] = '\0';
+      *filename = argv[*index];
     }
   }
 }
