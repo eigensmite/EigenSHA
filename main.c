@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "eigensha.h"
 
@@ -46,11 +47,25 @@ static void parameters(int *index, enum Sha *sha, char *filename, int argc,
 
 void print_help(const char *prog);
 
+long arg_max = 1;
+
 int main(int argc, char **argv) {
+
+  arg_max = sysconf(_SC_ARG_MAX);
+  if (arg_max == -1) {
+    perror("sysconf");
+    return 1;
+  }
 
   /* Default hash output size and input filename */
   enum Sha sha = SHA_3_256;
-  char filename[256] = {0};
+  char *filename = NULL;
+  if ((filename = calloc(arg_max, sizeof(char))) != 0) {
+    perror("calloc failed");
+    return 1;
+  }
+
+  // char filename[arg_max] = {0};
 
   /* Parse up to first two command-line arguments */
   for (int i = 1; i < 3; i++) {
@@ -65,7 +80,7 @@ int main(int argc, char **argv) {
   if (eigensha_init(&ctx, sha) != 0) {
     fprintf(stderr, "ERROR: eigensha_init failed.\n");
     fprintf(stderr, "Aborting...\n");
-    exit(1);
+    return 1;
   }
 
   /* Open file or default to stdin if no filename provided */
@@ -76,7 +91,7 @@ int main(int argc, char **argv) {
     f = fopen(filename, "rb");
     if (!f) {
       perror("Failed to open file");
-      exit(1);
+      return 1;
     }
   }
 
@@ -105,7 +120,7 @@ int main(int argc, char **argv) {
 
   /* Free SHA context */
   eigensha_free(&ctx);
-
+  free(filename);
   return 0;
 }
 
@@ -203,8 +218,8 @@ static void parameters(int *index, enum Sha *sha, char *filename, int argc,
       exit(1);
     } else {
       /* Copy argument to filename buffer (truncate if too long) */
-      strncpy(filename, argv[*index], 255);
-      filename[255] = '\0';
+      strncpy(filename, argv[*index], arg_max - 1);
+      filename[arg_max - 1] = '\0';
     }
   }
 }
