@@ -2,7 +2,7 @@
 
 ## Overview
 
-EigenSHA is a modular C library providing a **unified polymorphic interface** for the SHA-1, SHA-2, and SHA-3 families.
+EigenSHA is a modular C library providing a **unified polymorphic interface** for the SHA-1 (obsolete), SHA-2, and SHA-3 families.
 
 It supports **two layers of polymorphism**:
 
@@ -68,6 +68,11 @@ Supports:
 ├── sha3.h/.c     # Sponge construction
 ├── keccak_f.h/.c # Keccak-f permutation
 
+├── test.c        # Basic "abc"/448/896-bit examples   -> ./test1
+├── test2.c       # Full NIST test battery              -> ./test2
+
+├── Makefile
+├── LICENSE
 └── README.md
 ```
 ---
@@ -78,11 +83,45 @@ Supports:
 make
 ```
 
-Optional test suite:
+### Installing as a command
 
 ```bash
-make test
+install -Dm 755 eigensha ~/.local/bin/eigensha        # current user
+sudo install -m 755 eigensha /usr/local/bin/          # all users
 ```
+
+---
+
+## Testing
+
+```bash
+make test     # build ./test1 and ./test2
+make check    # build and run both; fails if any check fails
+```
+
+`test2` is the main test battery. For every supported algorithm it checks:
+
+* Digest length reported by `eigensha_get_hash_len()`
+* NIST example messages: empty, `"abc"`, 448-bit, 896-bit, 200 × `0xA3`, 1,000,000 × `'a'`
+* NIST CAVP ShortMsg vectors at every padding boundary (block size / sponge rate)
+* A multi-block NIST CAVP LongMsg vector
+* NIST CAVP Monte Carlo (100,000 chained hashes)
+* Streaming: split updates at every offset, byte-at-a-time, odd-sized chunks
+* Context reuse across init/free cycles
+
+The vectors are embedded, so no extra files are needed. The program exits non-zero if any check fails.
+
+### Full NIST CAVP run
+
+Download `shabytetestvectors.zip` and `sha-3bytetestvectors.zip` from the
+[NIST CAVP Secure Hashing page](https://csrc.nist.gov/Projects/Cryptographic-Algorithm-Validation-Program/Secure-Hashing),
+unzip all the `.rsp` files into one folder, then run:
+
+```bash
+./test2 path/to/rsp_folder      # add -v to list every check
+```
+
+This runs every byte-oriented ShortMsg, LongMsg and Monte Carlo vector: 3,661 checks in total, all passing.
 
 ---
 
@@ -101,21 +140,25 @@ cat <file> | ./eigensha [option]
 | ---------- | ------------------ |
 | `-1`       | SHA-1              |
 | `-224`     | SHA-224            |
-| `-256`     | SHA-256            |
+| `-256`     | SHA-256 (default)  |
 | `-384`     | SHA-384            |
 | `-512`     | SHA-512            |
-| `-512_224` | SHA-512/224        |
-| `-512_256` | SHA-512/256        |
+| `-512/224` | SHA-512/224        |
+| `-512/256` | SHA-512/256        |
 | `-3_224`   | SHA3-224           |
-| `-3_256`   | SHA3-256 (default) |
+| `-3_256`   | SHA3-256           |
 | `-3_384`   | SHA3-384           |
 | `-3_512`   | SHA3-512           |
+| `-h`, `--help` | Show usage     |
+
+Output follows the `sha256sum` style: the hex digest, two spaces, then the
+filename (or `-` for stdin).
 
 ---
 
 ### Examples
 
-#### Default (SHA3-256)
+#### Default (SHA-256)
 
 ```bash
 ./eigensha file.txt
@@ -157,7 +200,7 @@ void *ctx;
 #### Core Functions
 
 ```c
-void eigensha_init(eigensha_ctx *s, enum Sha sha);
+int  eigensha_init(eigensha_ctx *s, enum Sha sha);   // 0 on success, -1 on error
 void eigensha_free(eigensha_ctx *s);
 
 void eigensha_update(eigensha_ctx *s, void *data, size_t len);
@@ -165,6 +208,23 @@ void eigensha_finalize(eigensha_ctx *s);
 
 void eigensha_extract(uint8_t *hash, eigensha_ctx *s);
 size_t eigensha_get_hash_len(eigensha_ctx *s);
+```
+
+`eigensha_init` returns `-1` for an invalid algorithm or a failed allocation,
+and leaves `ops` and `ctx` set to `NULL`. Always check it before using the context.
+
+Example:
+
+```c
+eigensha_ctx ctx;
+uint8_t hash[64];
+
+if (eigensha_init(&ctx, SHA_256) != 0)
+    return 1;
+eigensha_update(&ctx, data, len);
+eigensha_finalize(&ctx);
+eigensha_extract(hash, &ctx);          // eigensha_get_hash_len(&ctx) bytes
+eigensha_free(&ctx);
 ```
 
 #### Utility

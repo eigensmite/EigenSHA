@@ -43,7 +43,7 @@ int eigensha_init(eigensha_ctx *s, enum Sha sha) {
   }
 
   if ((s->ctx = malloc(s->ops->ctx_size)) == NULL) {
-    fprintf(stderr, "ERROR: malloc failed to allocate eigensha context");
+    fprintf(stderr, "ERROR: malloc failed to allocate eigensha context\n");
     goto error;
   }
   s->ops->init(s->ctx);

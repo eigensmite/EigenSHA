@@ -1,24 +1,48 @@
 /******************************************************************************
  * main.c
  *
- * Example SHA-3 hashing program.
+ * EigenSHA command-line interface.
  *
  * Author: eigensmite
  * Date: 2026-03-14
  *
+ * Computes SHA-1, SHA-2 and SHA-3 digests of a file or of standard input,
+ * using the runtime polymorphic eigensha_ctx interface.
+ *
  * Usage:
  *   - Hash a file:
- *       ./sha3 <path/to/file> [-224|-256|-384|-512]
+ *       ./eigensha <path/to/file> [OPTION]
  *   - Hash stdin input:
- *       cat <path/to/file> | ./sha3 [-224|-256|-384|-512]
- *       echo -n "" | ./sha3 [-224|-256|-384|-512]
+ *       cat <path/to/file> | ./eigensha [OPTION]
+ *       echo -n "" | ./eigensha [OPTION]
+ *
+ * Options:
+ *   -1          SHA-1
+ *   -224        SHA-224
+ *   -256        SHA-256 (default)
+ *   -384        SHA-384
+ *   -512        SHA-512
+ *   -512/224    SHA-512/224
+ *   -512/256    SHA-512/256
+ *   -3_224      SHA3-224
+ *   -3_256      SHA3-256
+ *   -3_384      SHA3-384
+ *   -3_512      SHA3-512
+ *   -h, --help  Show usage
+ *
+ * Output:
+ *   <hex digest>  <filename>     ("-" when reading from stdin)
+ *
+ * Exit status:
+ *   0 on success, 1 if the file cannot be opened, the context cannot be
+ *   initialized, or an unknown option is given.
  *
  * This program demonstrates:
- *   - Initializing a SHA-3 sponge context
- *   - Absorbing input data from file or stdin
- *   - Finalizing with SHA-3 padding
- *   - Squeezing the hash output
- *   - Printing the hash in hexadecimal
+ *   - Selecting an algorithm at runtime with eigensha_init()
+ *   - Streaming input in 4 KiB chunks with eigensha_update()
+ *   - Finalizing (padding) with eigensha_finalize()
+ *   - Extracting the digest with eigensha_extract()
+ *   - Printing the digest in hexadecimal
  *
  *****************************************************************************/
 
@@ -50,7 +74,7 @@ void print_help(const char *prog);
 int main(int argc, char **argv) {
 
   /* Default hash output size and input filename */
-  enum Sha sha = SHA_3_256;
+  enum Sha sha = SHA_256;
   char *filename = NULL;
 
   /* Parse up to first two command-line arguments */
@@ -131,7 +155,8 @@ void print_help(const char *prog) {
   printf("\t  -3_224      Use SHA3-224\n");
   printf("\t  -3_256      Use SHA3-256\n");
   printf("\t  -3_384      Use SHA3-384\n");
-  printf("\t  -3_512      Use SHA3-512\n\n");
+  printf("\t  -3_512      Use SHA3-512\n");
+  printf("\t  -1  Use SHA-1 (obsolete, non-cryptographic use only)\n\n");
 
   printf("\tExamples:\n");
   printf("\t  %s file.txt -256\n", prog);
